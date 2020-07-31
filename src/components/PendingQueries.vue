@@ -25,10 +25,12 @@
             :class="{'text-success': getStatus(query.statusId) == 'Aceptada', 'text-danger': getStatus(query.statusId) == 'Rechazada'}">{{ getStatus(query.statusId) }}</th>
             <td class="text-center">{{ query.rejectMssg }}</td>
             <td class="text-center">
-              <img src="../assets/accept.svg" alt="Accept" class="accept-icon" title="Accept"
-              @click="acceptRequest(query)">
-              <img src="../assets/reject.svg" alt="Reject" class="reject-icon" title="Reject"
-              data-toggle="modal" data-target="#exampleModal" @click="setQuery(query)">
+              <div v-if="(!(getStatus(query.statusId) == 'Aceptada') && !(getStatus(query.statusId) == 'Rechazada'))">
+                <img src="../assets/accept.svg" alt="Accept" class="accept-icon" title="Accept"
+                @click="acceptRequest(query)">
+                <img src="../assets/reject.svg" alt="Reject" class="reject-icon" title="Reject"
+                data-toggle="modal" data-target="#exampleModal" @click="setQuery(query)">
+              </div>
             </td>
           </tr>
         </paginate>
@@ -65,23 +67,28 @@ import VuePaginate from 'vue-paginate'
 import Vue from 'vue'
 Vue.use(VuePaginate)
 const api = "http://localhost:3000/api";
+const session = JSON.parse(sessionStorage.getItem('vue-session-key'));
+const token = session ? session.token : undefined;
+const headers = {
+  headers: { Authorization: `Bearer ${token}` }
+};
 export default {
   created() {
     axios
-      .get(api + "/queries")
+      .get(api + "/queries", headers)
       .then((queries) => {
         this.queries = queries.data; 
         console.log('queries', this.queries);
         return axios
-          .get(api + "/db")
+          .get(api + "/db", headers)
           .then((db) => {
             this.dbs = db.data; 
             return axios
-              .get(api + "/status")
+              .get(api + "/status", headers)
               .then((status) => {
                 this.status = status.data; 
                 return axios
-              .get(api + "/user")
+              .get(api + "/user", headers)
               .then((users) => {
                 this.users = users.data; 
                 return 
@@ -120,10 +127,14 @@ export default {
           rejectMssg: ''
         };
         axios
-          .post(api + "/query-form/updateQuery", queryInfo)
-          .then(() => {
-            query.statusId = 1;
-            query.rejectMssg = '';         
+          .post(api + "/query-form/updateQuery", queryInfo, headers)
+          .then((queryUpdated) => {
+            if (queryUpdated.data) {
+              query.statusId = 1;
+              query.rejectMssg = '';         
+            } else {
+              alert('There was an error running the query');
+            }
           }) 
           .catch((error)=>{
             console.log(error);
@@ -137,7 +148,7 @@ export default {
           rejectMssg: this.rejectMssg
         };
         axios
-          .post(api + "/query-form/updateQuery", queryInfo)
+          .post(api + "/query-form/updateQuery", queryInfo, headers)
           .then(() => {
             this.rejectQuery.rejectMssg = this.rejectMssg;
             this.rejectQuery.statusId = 2;           
@@ -152,7 +163,7 @@ export default {
         const filteredStatus = this.status.filter(stat => stat.id == statusId)[0];
         console.log('filteredStatus', statusId);
         if (filteredStatus.status == 'Inactivo') {
-          return 'Inactivo';
+          return 'Pendiente';
         } else if (filteredStatus.status == 'Activo') {
           return 'Aceptada';
         } else if(filteredStatus.status == 'Rechazado') {

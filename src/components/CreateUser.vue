@@ -5,19 +5,22 @@
         <input type="text" class="bg-none" autocomplete="off" required v-model="new_user.user" />
         <span class="highlight"></span>
         <span class="bar"></span>
-        <label class="transform-label">Name</label>
+        <label class="transform-label">Name<sup>*</sup></label>
       </div>
       <div class="group mb-25">
-        <input type="text" class="bg-none" autocomplete="off" required v-model="new_user.email" />
+        <input type="email" class="bg-none" autocomplete="off" required v-model="new_user.email" />
         <span class="highlight"></span>
         <span class="bar"></span>
-        <label class="transform-label">Email</label>
+        <label class="transform-label">Email<sup>*</sup></label>
       </div>
       <div class="group mb-25">
         <input type="password" class="bg-none" autocomplete="off" required v-model="new_user.pass" />
         <span class="highlight"></span>
         <span class="bar"></span>
-        <label class="transform-label">Password</label>
+        <label class="transform-label">Password<sup>*</sup></label>
+        <p style="margin: 0;color: rgb(220, 53, 69);max-width: 324px;" v-show="!validPassword()">
+          Utiliza ocho caracteres como mínimo con una combinación de letras, números y símbolos
+        </p>
       </div>
       <div class="form-group">
         <select class="custom-select bg-light" id="inputGroupSelect01" v-model="new_user.roleId">
@@ -26,7 +29,7 @@
           <option value="1">Administrator</option>
         </select>
       </div>
-      <input type="submit" value="Create user" class="btn btn-danger btn-sigin w-10" />
+      <input type="submit" value="Create user" class="btn btn-danger btn-sigin w-10" :disabled="disabledForm()"/>
     </form>
   </div>
 </template>
@@ -54,6 +57,17 @@ export default {
         pass: "",
         statusId: 1
       };
+    },
+    disabledForm() {
+      const regexPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,10}$/;
+      const regexEmail = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@(([[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (this.new_user.name === '' || this.new_user.email === '' || !regexEmail.test(this.new_user.email) || !regexPassword.test(this.new_user.pass)) {
+        return true;
+      }
+    },
+    validPassword() {
+      const regexPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,10}$/;
+      return regexPassword.test(this.new_user.pass) || this.new_user.pass === '';
     }
   }
 };

@@ -71,18 +71,22 @@ import CreateUser from "./CreateUser.vue";
 import NavBar from "./Navbar";
 import axios from "axios";
 const api = "http://localhost:3000/api";
-
+const session = JSON.parse(sessionStorage.getItem('vue-session-key'));
+const token = session ? session.token : undefined;
+const headers = {
+  headers: { Authorization: `Bearer ${token}` }
+};
 export default {
   created() {
     axios
-      .get(api + "/user")
+      .get(api + "/user", headers)
       .then((users) => {
         users.data.forEach(user => {
           this.$set(user, 'editing', false);
         });
         this.users = users.data; 
         return axios
-          .get(api + "/status")
+          .get(api + "/status", headers)
           .then((status) => {
             status.data = status.data.filter(status => {
               return status.status != "Rechazado";
@@ -90,7 +94,7 @@ export default {
             console.log('object', status.data);
             this.status = status.data; 
             return axios
-              .get(api + "/role")
+              .get(api + "/role", headers)
               .then((roles) => {
                 this.roles = roles.data; 
                 return axios
@@ -121,7 +125,7 @@ export default {
   methods: {
     createUser(new_user) {
       axios
-      .post(api + "/user/createUser", new_user)
+      .post(api + "/user/createUser", new_user, headers)
       .then(() => {
          this.users.push(new_user);
       })
@@ -130,19 +134,25 @@ export default {
       });
     },
     getStatus(roleId) {
-      const filteredStatus = this.status.filter(stat => stat.id == roleId)[0];
-      if (filteredStatus.status == 'Inactivo') {
-        return 'Inactivo';
-      } else if (filteredStatus.status == 'Activo') {
-        return 'Activo';
-      } else if(filteredStatus.status == 'Rechazado') {
-        return 'Rechazado';
+      if (this.status.length !== 0) {
+        const filteredStatus = this.status.filter(stat => stat.id == roleId)[0];
+        if (filteredStatus && filteredStatus.status == 'Inactivo') {
+          return 'Inactivo';
+        } else if (filteredStatus && filteredStatus.status == 'Activo') {
+          return 'Activo';
+        } else if(filteredStatus && filteredStatus.status == 'Rechazado') {
+          return 'Rechazado';
+        }
+        return filteredStatus.status;
       }
-      return filteredStatus.status;
     },
     getRole(roleId) {
-      const filteredRole = this.roles.filter(role => role.id == roleId)[0];
-      return filteredRole.role;
+      if (this.roles.length !== 0) {
+        const filteredRole = this.roles.filter(role => role.id == roleId)[0];
+        if (filteredRole) {
+          return filteredRole.role;
+        }
+      }
     },
     editUser(user) {
       this.exitEditing();
@@ -168,7 +178,7 @@ export default {
       user.statusId = this.updateUser.statusId;
       user.roleId = this.updateUser.roleId;
       axios
-      .post(api + "/user/updateUser", user)
+      .post(api + "/user/updateUser", user, headers)
       .then((updateUser) => {
         console.log('updateUser', updateUser);
         user.editing = false;

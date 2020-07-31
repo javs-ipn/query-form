@@ -22,8 +22,8 @@
           <td class="text-center">{{ query.reject_mssg }}</td>
         </tr>
       </paginate>
-    </table>
     <paginate-links for="queries" :classes="{'ul': 'pagination', 'li': 'page-item', 'a': 'page-link'}" style="justify-content: flex-end;"></paginate-links>
+    </table>
   </div>
 </div>
 </template>
@@ -39,16 +39,20 @@ const api = "http://localhost:3000/api";
 export default {
   created() {
     const user = this.$session.get('user');
+    const token = this.$session.get('token');
+    const headers = {
+      headers: { Authorization: `Bearer ${token}` }
+    };
     axios
-      .get(api + "/query-form/" + user.id)
+      .get(api + "/query-form/" + user.id, headers)
       .then((queries) => {
         this.queries = queries.data; 
         return axios
-          .get(api + "/db")
+          .get(api + "/db", headers)
           .then((db) => {
             this.dbs = db.data; 
             return axios
-              .get(api + "/status")
+              .get(api + "/status", headers)
               .then((status) => {
                 this.status = status.data; 
               })
@@ -72,19 +76,23 @@ export default {
   },
   methods: {
     getStatus(query) {
-      const filteredStatus = this.status.filter(stat => stat.id == query.statusId)[0];
-      if (filteredStatus.status == 'Inactivo') {
-        return 'Pendiente';
-      } else if (filteredStatus.status == 'Activo') {
-        return 'Aceptado';
-      } else if(filteredStatus.status == 'Rechazado') {
-        return 'Rechazado';
+      if (this.status.length !== 0) {
+        const filteredStatus = this.status.filter(stat => stat.id == query.statusId)[0];
+        if (filteredStatus.status == 'Inactivo') {
+          return 'Pendiente';
+        } else if (filteredStatus.status == 'Activo') {
+          return 'Aceptado';
+        } else if(filteredStatus.status == 'Rechazado') {
+          return 'Rechazado';
+        }
+        return filteredStatus.status;
       }
-      return filteredStatus.status;
     },
     getDB(query) {
-      const filteredDB = this.dbs.filter(db => db.id == query.bdId)[0];
-      return filteredDB.base;
+      if (this.dbs.length !== 0) {
+        const filteredDB = this.dbs.filter(db => db.id == query.bdId)[0];
+        return filteredDB.base;
+      }
     }
   }
 }

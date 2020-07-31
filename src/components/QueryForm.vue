@@ -38,10 +38,16 @@
 import axios from "axios";
 import NavBar from "./Navbar";
 const api = "http://localhost:3000/api";
+const session = JSON.parse(sessionStorage.getItem('vue-session-key'));
+const token = session ? session.token : undefined;
+const headers = {
+  headers: { Authorization: `Bearer ${token}` }
+};
 export default {
   created() {
+    
     axios
-      .get(api + "/db")
+      .get(api + "/db", headers)
       .then((db) => {
         this.dbs = db.data; 
         console.log(db);
@@ -78,7 +84,7 @@ export default {
       };
 
       axios
-        .post(api + "/query-form", queryToSend)
+        .post(api + "/query-form", queryToSend, headers)
         .then(() => {
           this.successQuery = true;
           setTimeout(()=>{

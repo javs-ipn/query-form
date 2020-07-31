@@ -32,6 +32,7 @@ import axios from "axios";
 import EmptyNavbar from "./EmptyNavbar";
 import Vue from "vue";
 import VueSession from 'vue-session';
+
 Vue.use(VueSession)
 const api = "http://localhost:3000/api";
 
@@ -50,20 +51,24 @@ export default {
   },
   methods: {
     sigin() {
-      const user = {
+      const loggedUser = {
         email: this.email,
         pass: this.pass
       };
       axios
-        .post(api + "/sigin", user)
-        .then((user) => {
+        .post(api + "/sigin", loggedUser)
+        .then((response) => {
+          const user = response.data.foundUser;
+          const accessToken = response.data.token.access_token;
+          
           // inactive user
-          if (user.data.statusId != 0) {
-            this.$session.set('user', user.data)
-            if (user.data.roleId == 1) {
-              this.$router.push("/pending-queries");
+          if (user.statusId != 0) {
+            this.$session.set('user', user);
+            this.$session.set('token', accessToken);
+            if (user.roleId == 1) {
+              this.navigate("/pending-queries");
             } else {
-              this.$router.push("/my-queries");
+              this.navigate("/my-queries");
             }
           } else {
             this.inactiveUser = true;

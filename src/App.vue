@@ -18,6 +18,7 @@ Vue.use(VueRouter);
 const router = new VueRouter({
   routes: [
     {
+      name: 'Login',
       path: "/",
       component: LoginForm
     },
@@ -30,14 +31,48 @@ const router = new VueRouter({
       component: MyQueries
     },
     {
+      name: "PendingQueries",
       path: "/pending-queries",
       component: PendingQueries
     },
     {
+      name: 'UserList',
       path: "/user-list",
       component: UserList
     }
   ]
+});
+
+Vue.mixin({
+  methods: {
+    navigate(route) {
+      router.push(route).catch(err => { 
+        throw new Error(`Problem handling something: ${err}.`);
+      });
+    }
+  }
+});
+
+router.beforeEach((to, from, next) => {
+  try {
+  const token = sessionStorage.getItem('vue-session-key') ? JSON.parse(sessionStorage.getItem('vue-session-key')).token : undefined;  
+    if (to.name !== 'Login' && !token) {
+      next({ name: 'Login' })
+    } else {
+      next();
+    }
+
+    if (to.name === 'UserList' || to.name === 'PendingQueries') {
+      const isAdmin = sessionStorage.getItem('vue-session-key') ? JSON.parse(sessionStorage.getItem('vue-session-key')).user.roleId : undefined;  
+      if (isAdmin) {
+        next();
+      } else {
+        next(from);
+      }
+    }
+  } catch(err) {
+    console.log('error in router', err);
+  }
 });
 
 export default {
